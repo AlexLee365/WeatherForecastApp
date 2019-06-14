@@ -215,10 +215,10 @@ class ViewController: UIViewController {
         headerCurrentDegreeTextLabel.textColor = .white
         headerCurrentDegreeTextLabel.font = .systemFont(ofSize: 80, weight: .ultraLight)
     
+        backgroundImageView.addSubview(blurView)
         blurView.effect = nil
         blurView.frame = CGRect(x: 0, y: 0, width: 1000, height: view.frame.height)
         blurView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        self.backgroundImageView.addSubview(blurView)
     }
     
     private func getCurrentTime() {
@@ -257,20 +257,24 @@ class ViewController: UIViewController {
     }
     
     private func setCurrentWeatherData() {
-//        let apiAddress = "https://api2.sktelecom.com/weather/current/hourly?appKey=66b18350-4b00-4eee-aaf9-8e638a3416a0&lat=\(currentCoordinate.coordinate.latitude)&lon=\(currentCoordinate.coordinate.longitude)"
-//        guard let apiURL = URL(string: apiAddress) else { return print("apiURL conver error!!")}
-//
-//        let dataTask = URLSession.shared.dataTask(with: apiURL) { (data, response, error) in
-//            guard error == nil else { return print("datTask error!!") }
-//
-//            guard let serverData = data else { return print("data convert error!!")}
+        let apiAddress = "https://api2.sktelecom.com/weather/current/hourly"
+            + "?appKey=66b18350-4b00-4eee-aaf9-8e638a3416a0"
+            + "&lat=\(currentCoordinate.coordinate.latitude)"
+            + "&lon=\(currentCoordinate.coordinate.longitude)"
         
-            guard let data = try? JSONSerialization.jsonObject(with: currentWeather) as? [String: Any]
+        guard let apiURL = URL(string: apiAddress) else { return print("apiURL conver error!!")}
+
+        let dataTask = URLSession.shared.dataTask(with: apiURL) { (data, response, error) in
+            guard error == nil else { return print("datTask error!!") }
+
+            guard let serverData = data else { return print("data convert error!!")}
+        
+            guard let data = try? JSONSerialization.jsonObject(with: serverData) as? [String: Any]
                 else { print("Crurrent WeatherData convert error"); return }
-            print("🔵🔵🔵 data: ", data)
+            
             guard let weather = data["weather"] as? [String: Any], let hourly = weather["hourly"] as? [[String: Any]]
                 else { print("weather conver error"); return }
-            print("🔵🔵🔵 weatehr: ", weather)
+            
             
             hourly.forEach{
                 if let sky = $0["sky"] as? [String: Any],
@@ -307,11 +311,11 @@ class ViewController: UIViewController {
             }
             
             print("🔸🔸🔸 현재 날씨: 온도 \(self.currentTemp)   상태 \(self.currentState)  코드 \(self.currentWeatherCode)  최저\(self.lowestTemp)  최고 \(self.highestTemp)")
-//        }
-//        dataTask.resume()
+        }
+        dataTask.resume()
         
         
-       
+        
         
         
     }
@@ -465,7 +469,7 @@ class ViewController: UIViewController {
             self.getCurrentTime()
         }
         locationManager.stopUpdatingLocation()
-        setCurrentWeatherData()
+        
     }
     
     var isDark = true
@@ -492,9 +496,7 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
             isDark = false
             
             UIView.animate(withDuration: 1) {
-//                self.view.bounds = CGRect(origin: CGPoint(x: self.view.frame.origin.x+20, y: 0), size: self.view.frame.size)
                 self.blurView.alpha = 0
-//                self.blurView.effect = nil
                 self.backgroundImageView.transform = CGAffineTransform.identity
             }
             
@@ -507,8 +509,6 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
             isDark = true
             
             UIView.animate(withDuration: 1) {
-//                self.backgroundImageView.bounds = CGRect(origin: CGPoint(x: self.backgroundImageView.bounds.origin.x-20, y: 0), size: self.backgroundImageView.bounds.size)
-//                self.view.bounds = CGRect(origin: CGPoint(x: self.view.frame.origin.x-20, y: 0), size: self.view.frame.size)
                 self.backgroundImageView.transform =  self.backgroundImageView.transform.translatedBy(x: -10, y: 0)
                 self.blurView.effect = UIBlurEffect(style: .dark)
                 self.blurView.alpha = 0.8
@@ -556,6 +556,7 @@ extension ViewController: CLLocationManagerDelegate {
         let current = locations.last!
         print("🔸🔸🔸 locationManager current Location: ", current)
         currentCoordinate = CLLocation(latitude: current.coordinate.latitude, longitude: current.coordinate.longitude)
+        setCurrentWeatherData()
         getCurrentAddress(coordinate: currentCoordinate)
     }
     
